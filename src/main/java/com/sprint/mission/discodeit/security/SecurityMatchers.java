@@ -1,0 +1,18 @@
+package com.sprint.mission.discodeit.security;
+
+import org.springframework.http.HttpMethod;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+
+public class SecurityMatchers {
+
+	public static final RequestMatcher NON_API = new
+		NegatedRequestMatcher(
+		new AntPathRequestMatcher(("/api/**"))
+	);
+
+	public static final RequestMatcher SIGN_UP = new AntPathRequestMatcher("/api/users", HttpMethod.POST.name());
+
+	public static final RequestMatcher CSRF_TOKEN = new AntPathRequestMatcher("/api/auth/csrf-token", HttpMethod.GET.name());
+}
