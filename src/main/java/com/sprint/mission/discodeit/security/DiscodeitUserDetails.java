@@ -20,7 +20,9 @@ public class DiscodeitUserDetails implements UserDetails {
   //DaoAuthenticationProvider는 UserDetailsService.loadUserByUsername()을 호출함. 유저디테일즈서비스는 데이터 로더역할, 유저디테일스는 사용자 정보를 담은 객체
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
-    return List.of(new SimpleGrantedAuthority("ROLE_".concat(userDto.role().name())));
+    return List.of(new SimpleGrantedAuthority("ROLE_ADMIN"));
+
+//    return List.of(new SimpleGrantedAuthority("ROLE_".concat(userDto.role().name())));
   }
 
 
