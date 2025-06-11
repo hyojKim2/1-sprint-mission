@@ -1,28 +1,36 @@
 package com.sprint.mission.discodeit.config;
 
-import static com.sprint.mission.discodeit.security.SecurityMatchers.CSRF_TOKEN;
-import static com.sprint.mission.discodeit.security.SecurityMatchers.SIGN_UP;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sprint.mission.discodeit.security.CustomSessionInformationExpiredStrategy;
 import com.sprint.mission.discodeit.security.JsonUsernamePasswordAuthenticationFilter;
 import com.sprint.mission.discodeit.security.SecurityMatchers;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
+@EnableWebSecurity
+@EnableMethodSecurity
 public class SecurityConfig {
 
   @Bean
-  SecurityFilterChain filterChain(HttpSecurity http,
-      DaoAuthenticationProvider daoAuthenticationProvider, ObjectMapper objectMapper)
+  public SecurityFilterChain filterChain(
+      HttpSecurity http, ObjectMapper objectMapper,
+      DaoAuthenticationProvider daoAuthenticationProvider,
+      SessionRegistry sessionRegistry
+  )
+
       throws Exception {
     http
         .authenticationProvider(daoAuthenticationProvider)
@@ -30,8 +38,8 @@ public class SecurityConfig {
             auth
                 .requestMatchers(
                     SecurityMatchers.NON_API,
-                    SIGN_UP,
-                    CSRF_TOKEN
+                    SecurityMatchers.SIGN_UP,
+                    SecurityMatchers.CSRF_TOKEN
                 ).permitAll()
                 .anyRequest().authenticated())
 
@@ -39,6 +47,12 @@ public class SecurityConfig {
         .with(new JsonUsernamePasswordAuthenticationFilter.Configure(objectMapper),
             Customizer.withDefaults()) //custom 인증 필터 등록(로그인 요청 url설정, 성공/실패 핸들링 등 관리)
         .formLogin(AbstractHttpConfigurer::disable) //formLogin 사용하지 않음
+        .sessionManagement(session -> session.sessionFixation().migrateSession().maximumSessions(1)
+            .maxSessionsPreventsLogin(false)
+            .sessionRegistry(sessionRegistry)
+            .expiredSessionStrategy(new CustomSessionInformationExpiredStrategy(objectMapper))
+        )
+    ;
     ;
     return http.build();
   }
@@ -59,5 +73,11 @@ public class SecurityConfig {
 
     return provider;
   }
+
+  @Bean
+  public SessionRegistry sessionRegistry() {
+    return new SessionRegistryImpl();
+  }
+
 
 }
